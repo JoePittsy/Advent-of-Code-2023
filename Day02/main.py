@@ -1,77 +1,42 @@
+
+from collections import defaultdict
+from itertools import groupby
+from typing import Dict, List
+import math
+
+
 def read_input(fileName: str = "input.txt") -> list[str]:
-    games = []
     with open(fileName, 'r') as f:
-        lines = f.readlines()
-        for line in lines:
-            line = line.strip()
-            line = line.split(": ")[1]
-            games.append(line.split("; "))
-
-    return games
-
-def part1(input, bag): 
-    legalGames = []
-    for index, game in enumerate(input):
-        index += 1
-        gameLegal = True
-        for subGame in game:
-            cubes = subGame.split(", ")
-            for cube in cubes:
-                split = cube.split(" ")
-                number = int(split[0])
-                colour = split[1]
-
-                bagMax = bag[colour]
-                if number > bagMax:
-                    print(f"Game {index} is illegal, {colour} has {number} cubes, but only {bagMax} are available.")
-                    gameLegal = False
-                    break
-            if not gameLegal:
-                break
-
-        if gameLegal:
-            legalGames.append(index)
-    print(sum(legalGames))
+        return [line.strip().split(": ")[1].split("; ") for line in f]
 
 
-def part2(input): 
-    cubePowers = []
-    for index, game in enumerate(input):
-        index += 1
-        maxRed = 0
-        maxGreen = 0
-        maxBlue = 0
+def get_largest_cubes_for_game(game: List[str]) -> Dict[str, int]:
+    # ["1 red, 2 green, 3 blue", "4 red, 5 green, 6 blue"] -> [(1, "red"), (2, "green"), (3, "blue"), (4, "red"), (5, "green"), (6, "blue")]
+    cubes = [(int(number), colour) for subGame in game for cube in subGame.split(", ") for number, colour in [cube.split(" ")]]
+    cubes.sort(key=lambda x: x[1]) # Sort the list of tuples by color (group by requires the list to be sorted 🙄)        
+    max_cubes = {color: max(group, key=lambda x: x[0])[0] for color, group in groupby(cubes, key=lambda x: x[1])} # Group by color and find the max number for each color
 
-        for subGame in game:
-            cubes = subGame.split(", ")
-            for cube in cubes:
-                split = cube.split(" ")
-                number = int(split[0])
-                colour = split[1]
-
-                if colour == "red" and number > maxRed:
-                    maxRed = number
-                elif colour == "green" and number > maxGreen:
-                    maxGreen = number
-                elif colour == "blue" and number > maxBlue:
-                    maxBlue = number
-                    
-
-              
-        print(f"Game {index} could be played with {maxRed} red, {maxGreen} green and {maxBlue} blue cubes.")
-        cubePowers.append(maxRed * maxGreen * maxBlue)
-
-    print(sum(cubePowers))
+    return max_cubes
 
 
+def part1(games: List[List[str]]) -> int:
+
+    bag = { "red": 12, "green": 13, "blue": 14 }
+
+    def is_game_legal(game: List[str], bag: Dict[str, int]) -> bool:
+        for color, number in get_largest_cubes_for_game(game).items():
+            if number > bag.get(color, 0):
+                return False
+        return True
+
+    return sum(index for index, game in enumerate(games, start=1) if is_game_legal(game, bag))
+
+
+def part2(games: List[List[str]]) -> int: 
+    return sum(math.prod(get_largest_cubes_for_game(game).values()) for game in games)
 
 if __name__ == "__main__":
-    bag = {
-        "red": 12,
-        "green": 13,
-        "blue": 14
-    }
-    input = read_input()
-    part1(input, bag)   
-    part2(input)
+    games = read_input()
+    print(f"Part 1: {part1(games)}")    
+    print(f"Part 2: {part2(games)}")
 
