@@ -1,7 +1,5 @@
-
 def read_input(filename: str = "input.txt"):
     with open(filename, 'r') as f:
-        #games = [['41 48 83 86 17', '83 86  6 31 17  9 48 53'], ['13 32 20 16 61', '61 30 68 82 17 32 24 19'], [' 1 21 53 59 44', '69 82 63 72 16 21 14  1'], ['41 92 73 84 69', '59 84 76 51 58  5 54 83'], ['87 83 26 28 32', '88 30 70 12 93 22 82 36'], ['31 18 13 56 72', '74 77 10 23 35 67 36 11']]
         games = [line.strip().split(": ")[1].split(" | ") for line in f.readlines()]
         intGames = []
         for game in games:
@@ -11,63 +9,51 @@ def read_input(filename: str = "input.txt"):
 
         return intGames
     
+def part1(games: list[tuple[list[int], list[int]]]) -> int:
+    total_score = 0
 
-def part1(input: list[tuple[list[int], list[int]]]) -> int:
-    totalScore = 0
+    for winning_numbers, my_numbers in games:
+        intersection = set(winning_numbers) & set(my_numbers)
+        if intersection:
+            total_score += 2 ** (len(intersection) - 1)
 
-    def double_n_times(a, n):
-        return a * 2 ** n
+    return total_score
 
-    for game in input:
-        winningNumbers = game[0]
-        myNumbers = game[1]
-        intersection = list(set(winningNumbers) & set(myNumbers))
-        if (len(intersection) > 0):
-            totalScore += double_n_times(1, len(intersection)-1)
-    return totalScore
 
-def part2(input: list[tuple[list[int], list[int]]]) -> int:
+def part2(games: list[tuple[list[int], list[int]]]) -> int:
 
-    winnings = dict()
-    extraCards: list[int] = []
-    global totalScratchCards
-    totalScratchCards = len(input)
+    winnings = {}
+    extra_cards = []
 
-    # Process original cards
-    for i, game in enumerate(input):
-        winningNumbers = game[0]
-        myNumbers = game[1]
-
-        intersection = list(set(winningNumbers) & set(myNumbers))
-        if (len(intersection) > 0):
-            # We know that card i equals c+i cards
-            wonCards = [c + i for c, _ in enumerate(intersection, 1)]
-            winnings[i] = wonCards
-            extraCards.extend(wonCards)
+    for i, (winning_numbers, my_numbers) in enumerate(games, 1):
+        if set(winning_numbers) & set(my_numbers):
+            won_cards = [c + i for c, _ in enumerate(set(winning_numbers) & set(my_numbers), 1)]
+            winnings[i] = won_cards
+            extra_cards.extend(won_cards)
+        else :
+            winnings[i] = []
     
-    # Now we can process the extra cards
-    totalScratchCards += len(extraCards)
-    print(f"Extra cards: {extraCards}")
-    print(f"Total cards before processing extras: {totalScratchCards}, to process: {len(extraCards)}")
+    def expand_winnings(card, winnings, simplified):
+        if card in simplified:
+            return simplified[card]
+        
+        total_winnings = winnings[card].copy()
+        for won_card in winnings[card]:
+            total_winnings.extend(expand_winnings(won_card, winnings, simplified))
 
-    def process_extras_recursively(cards, winnings):
-        totalExtraCards = 0
-        for card in cards:
-            wonCards = winnings.get(card)
-            if wonCards is not None:
-                # Add the number of won cards
-                totalExtraCards += len(wonCards)
+        simplified[card] = total_winnings
+        return total_winnings
 
-                # Recursively process won cards and add to the total
-                totalExtraCards += process_extras_recursively(wonCards, winnings)
-        return totalExtraCards
+    # It's way way more efficent to flatten the winnings recursivley once then it is to recursively procsess every extra!
+    def simplify_winnings(winnings):
+        simplified = {}
+        for key in sorted(winnings.keys(), reverse=True):
+            expand_winnings(key, winnings, simplified)
+        return simplified
 
-    extras = process_extras_recursively(extraCards, winnings)
-    
+    simplified_winnings = simplify_winnings(winnings)
 
-    return totalScratchCards + extras
-
-
+    return sum(len(cards) for cards in simplified_winnings.values()) + len(simplified_winnings.keys())
 
 if __name__ == "__main__": 
     input = read_input()
