@@ -17,12 +17,9 @@ def get_largest_cubes_for_game(game: List[str]) -> Dict[str, int]:
     max_cubes = {color: max(group, key=lambda x: x[0])[0] for color, group in groupby(cubes, key=lambda x: x[1])} # Group by color and find the max number for each color
 
     return max_cubes
-
-
+     
 def part1(games: List[List[str]]) -> int:
-
     bag = { "red": 12, "green": 13, "blue": 14 }
-
     def is_game_legal(game: List[str], bag: Dict[str, int]) -> bool:
         for color, number in get_largest_cubes_for_game(game).items():
             if number > bag.get(color, 0):
@@ -30,7 +27,6 @@ def part1(games: List[List[str]]) -> int:
         return True
 
     return sum(index for index, game in enumerate(games, start=1) if is_game_legal(game, bag))
-
 
 def part2(games: List[List[str]]) -> int: 
     return sum(math.prod(get_largest_cubes_for_game(game).values()) for game in games)
