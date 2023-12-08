@@ -7,13 +7,12 @@ def read_input(filename: str = "input.txt"):
         maps = {m.strip().split(" = ")[0]: m.strip().split(" = ")[1][1:-1].split(", ") for m in data[2:]}
         return (instructions, maps)
 
-def walk_to_xxZ(start, instructions, maps):
+def walk_to_xxZ(start: str, instructions: str, maps: dict) -> int:
     location = start
-    instructionIndex = 0
-    steps = 0
-    while location.endswith("Z") == False:
-        location = maps[location][0 if instructions[instructionIndex] == "L" else 1]
-        instructionIndex = (instructionIndex + 1) % (len(instructions)-1)
+    steps = 0   
+    while not location.endswith("Z"):
+        left_or_right = 0 if instructions[steps % (len(instructions)-1)] == "L" else 1
+        location = maps[location][left_or_right]
         steps += 1
     return steps
 
@@ -22,7 +21,6 @@ def part2(instructions, maps):
     cycles = [walk_to_xxZ(start, instructions, maps) for start in startLocations]
     return math.lcm(*cycles)
 
-    
 if __name__ == "__main__":
     instructions, maps = read_input()
 
