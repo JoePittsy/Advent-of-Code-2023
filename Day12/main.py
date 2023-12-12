@@ -32,7 +32,7 @@ def number_of_legal_permutations(springs: str, nums: tuple[int] ) -> int:
             return False
         # ??? to check is 3 so we could convert them all to # and it would be legal
         if (len(without_leading) == num_to_check):
-            return int(len(nums) == 1) #single spring, right size
+            return len(nums) == 1 # single spring, right size
         # ???#?? to check is 3 Let's check the 3rd one is a # so this must be illegal because if we converted the first 3 to # it would be four # in a row which is 4 not 4
         if without_leading[num_to_check] == "#":
             return False
