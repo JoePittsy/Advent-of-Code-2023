@@ -4,8 +4,8 @@ from functools import cache
 def read_input(filename: str = "input.txt") -> list:
     with open(filename) as file:
         springs = [c.strip().split() for c in file.readlines()]
-        ss = [[c[0],tuple(int(d) for d in c[1].split(','))] for c in springs]
-        return ss
+        springsAndNumbers = [[c[0],tuple(int(d) for d in c[1].split(','))] for c in springs]
+        return springsAndNumbers
     
 @cache
 def number_of_legal_permutations(springs: str, nums: tuple[int] ) -> int:
