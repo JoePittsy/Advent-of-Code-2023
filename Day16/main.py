@@ -117,58 +117,30 @@ def part1(maze):
     return solve_maze(maze, Laser(0, -1, Direction.RIGHT))
 
 
-def get_outside_edges(x1, y1, x2, y2):
-    # Ensure the coordinates are in the correct order
-    x1, x2 = sorted([x1, x2])
-    y1, y2 = sorted([y1, y2])
-
-    # Generate the top and bottom edges
-    top_edge = [(x, y1) for x in range(x1, x2 + 1)]
-    bottom_edge = [(x, y2) for x in range(x1, x2 + 1)]
+def part2(maze):
+    c1, r1, c2, r2 = 0, 0, len(maze[0]), len(maze)
+    left_edge = [Laser(c, r1-1, Direction.RIGHT) for c in range(c1, c2)]
+    right_edge = [Laser(c, r2+1, Direction.LEFT) for c in range(c1, c2)]
 
     # Generate the left and right edges, excluding the corners
-    left_edge = [(x1, y) for y in range(y1 + 1, y2)]
-    right_edge = [(x2, y) for y in range(y1 + 1, y2)]
+    top_edge = [Laser(c1-1, r, Direction.DOWN) for r in range(r1, r2)]
+    bottom_edge = [Laser(c2+1, r, Direction.UP) for r in range(r1, r2)]
+
+    corners = [
+        Laser(c1-1, r1, Direction.RIGHT),
+        Laser(c1, r1-1, Direction.DOWN),
+        Laser(c2+1, r1, Direction.LEFT),
+        Laser(c2, r1-1, Direction.DOWN),
+        Laser(c1-1, r2, Direction.RIGHT),
+        Laser(c1, r2+1, Direction.UP),
+        Laser(c2+1, r2, Direction.LEFT),
+        Laser(c2, r2+1, Direction.UP),
+    ]
 
     # Combine all edges
-    edges = top_edge + bottom_edge + left_edge + right_edge
-    return edges
+    lasers = top_edge + bottom_edge + left_edge + right_edge + corners
 
-def part2(maze):
-    edges = get_outside_edges(0, 0, len(maze[0]) - 1, len(maze) - 1)
-    values = []
-    for row, col in edges:
-        # print(f"({row}, {col})")
-        dir = Direction.RIGHT
-        if col == 0:
-            dir = Direction.RIGHT
-            col-=1
-        elif col == len(maze[0]) - 1:
-            dir = Direction.LEFT
-            col+=1
-        if row == 0:
-            dir = Direction.DOWN
-            row-=1
-        elif row == len(maze) - 1:
-            dir = Direction.UP
-            row+=1
-
-        if row == 0 and col == 0:
-            values.append(solve_maze(maze, Laser(row, col, Direction.DOWN)))
-            values.append(solve_maze(maze, Laser(row, col, Direction.RIGHT)))
-        elif row == 0 and col == len(maze[0]) - 1:
-            values.append(solve_maze(maze, Laser(row, col, Direction.DOWN)))
-            values.append(solve_maze(maze, Laser(row, col, Direction.LEFT)))
-        elif row == len(maze) - 1 and col == 0:
-            values.append(solve_maze(maze, Laser(row, col, Direction.UP)))
-            values.append(solve_maze(maze, Laser(row, col, Direction.RIGHT)))
-        elif row == len(maze) - 1 and col == len(maze[0]) - 1:
-            values.append(solve_maze(maze, Laser(row, col, Direction.UP)))
-            values.append(solve_maze(maze, Laser(row, col, Direction.LEFT)))
-        else:
-            values.append(solve_maze(maze, Laser(row, col, dir)))
-    return max(values)
-    # print(row_indexes)
+    return max((solve_maze(maze, laser) for laser in lasers))
 
 
 if __name__ == "__main__":
