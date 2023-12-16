@@ -8,19 +8,6 @@ class Direction(Enum):
     UP = 3
     DOWN = 4
 
-def read_input(filename: str = "input.txt") -> list:
-    with open (filename, "r") as f: 
-        return [list(line.strip()) for line in f.readlines()]
-    
-def pprint(input: list, energised_tiles) -> None:
-    for row, line in enumerate(input):
-        for col, char in enumerate(line):
-            if (row, col) in energised_tiles:
-                print("#", end="")
-            else:
-                print(char, end="")
-        print()
-
 @dataclass
 class Laser:
     row: int
@@ -28,90 +15,76 @@ class Laser:
     direction: Direction
     alive: bool = True
 
-    def __str__(self) -> str:
-        return f"({self.row}, {self.col}) {self.direction.name}"
+    @property
+    def coords(self):
+        return (self.row, self.col)
+
+
+def read_input(filename: str = "input.txt") -> list:
+    with open (filename, "r") as f: 
+        return [list(line.strip()) for line in f.readlines()]
+
 
 def solve_maze(maze, start_laser: Laser):
+    def get_new_direction(current_direction, tile):
+        direction_change_map = {
+            (Direction.LEFT, '|'): (Direction.UP, Direction.DOWN),
+            (Direction.RIGHT, '|'): (Direction.UP, Direction.DOWN),
+            (Direction.UP, '-'): (Direction.LEFT, Direction.RIGHT),
+            (Direction.DOWN, '-'): (Direction.LEFT, Direction.RIGHT),
+            (Direction.RIGHT, '\\'): Direction.DOWN,
+            (Direction.LEFT, '\\'): Direction.UP,
+            (Direction.UP, '\\'): Direction.LEFT,
+            (Direction.DOWN, '\\'): Direction.RIGHT,
+            (Direction.RIGHT, '/'): Direction.UP,
+            (Direction.LEFT, '/'): Direction.DOWN,
+            (Direction.UP, '/'): Direction.RIGHT,
+            (Direction.DOWN, '/'): Direction.LEFT,
+        }
+        return direction_change_map.get((current_direction, tile), current_direction)
+    
+    direction_deltas = {
+        Direction.RIGHT: (0, 1),
+        Direction.LEFT: (0, -1),
+        Direction.UP: (-1, 0),
+        Direction.DOWN: (1, 0)
+    }
+
     lasers: [Laser] = [start_laser]
     energised_tiles = set()
     seen_lasers = set()
 
-    while any(laser.alive for laser in lasers): 
+    while any(laser.alive for laser in lasers):
         for laser in lasers:
             if not laser.alive:
                 continue
 
-            # Move the laser based on its direction
-            match laser.direction:
-                case Direction.RIGHT:
-                    laser.col += 1
-                case Direction.LEFT:
-                    laser.col -= 1
-                case Direction.UP:
-                    laser.row -= 1
-                case Direction.DOWN:
-                    laser.row += 1
+            delta_row, delta_col = direction_deltas[laser.direction]
+            laser.row += delta_row
+            laser.col += delta_col
 
-            # Check if laser is out of bounds
-            if laser.row < 0 or laser.row >= len(maze) or laser.col < 0 or laser.col >= len(maze[0]):
+            if not (0 <= laser.row < len(maze) and 0 <= laser.col < len(maze[0])):
                 laser.alive = False
                 continue
 
-            # Check if the laser's state has been seen before
             laser_state = (laser.row, laser.col, laser.direction)
             if laser_state in seen_lasers:
                 laser.alive = False
                 continue
-            else:
-                seen_lasers.add(laser_state)
 
-            # Energize the tile
-            energised_tiles.add((laser.row, laser.col))
+            seen_lasers.add(laser_state)
+            energised_tiles.add(laser.coords) 
 
-            # Handle the reflection and direction changes
             new_tile = maze[laser.row][laser.col]
-            match new_tile:
-                case "|":
-                    if laser.direction == Direction.LEFT or laser.direction == Direction.RIGHT:
-                        #print("Laser is going up, a new laser will be created going down")
-                        laser.direction = Direction.UP
-                        lasers.append(Laser(laser.row, laser.col, Direction.DOWN))
-                case "-":
-                    if laser.direction == Direction.UP or laser.direction == Direction.DOWN:
-                        #print("Laser is going left, a new laser will be created going right")
-                        laser.direction = Direction.LEFT
-                        lasers.append(Laser(laser.row, laser.col, Direction.RIGHT))
-                case "\\":
-                    match laser.direction:
-                        case Direction.RIGHT:
-                            #print("Laser has been reflected, it will now go down")
-                            laser.direction = Direction.DOWN
-                        case Direction.LEFT:
-                            #print("Laser has been reflected, it will now go up")
-                            laser.direction = Direction.UP
-                        case Direction.UP:
-                            #print("Laser has been reflected, it will now go left")
-                            laser.direction = Direction.LEFT
-                        case Direction.DOWN:
-                            #print("Laser has been reflected, it will now go right")
-                            laser.direction = Direction.RIGHT
-                case "/":
-                    match laser.direction:
-                        case Direction.RIGHT:
-                            #print("Laser has been reflected, it will now go up")
-                            laser.direction = Direction.UP
-                        case Direction.LEFT:
-                            #print("Laser has been reflected, it will now go down")
-                            laser.direction = Direction.DOWN
-                        case Direction.UP:
-                            #print("Laser has been reflected, it will now go right")
-                            laser.direction = Direction.RIGHT
-                        case Direction.DOWN:
-                            #print("Laser has been reflected, it will now go left")
-                            laser.direction = Direction.LEFT
+            directions = get_new_direction(laser.direction, new_tile)
+            if isinstance(directions, tuple):
+                lasers.append(Laser(laser.row, laser.col, directions[0]))
+                lasers.append(Laser(laser.row, laser.col, directions[1]))
+                laser.alive = False
+            else:
+                laser.direction = directions
 
     return len(energised_tiles)
-
 
 def part1(maze):
     return solve_maze(maze, Laser(0, -1, Direction.RIGHT))
