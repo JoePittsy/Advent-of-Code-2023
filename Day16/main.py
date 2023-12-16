@@ -34,12 +34,14 @@ class Laser:
 def part1(maze):
     lasers: [Laser] = [Laser(0, -1, Direction.RIGHT)]
     energised_tiles = set()
-    last_len = 0
-    lives = 90000000
+    seen_lasers = set()
 
-
-    while True: 
+    while any(laser.alive for laser in lasers): 
         for laser in lasers:
+            if not laser.alive:
+                continue
+
+            # Move the laser based on its direction
             match laser.direction:
                 case Direction.RIGHT:
                     laser.col += 1
@@ -50,21 +52,24 @@ def part1(maze):
                 case Direction.DOWN:
                     laser.row += 1
 
+            # Check if laser is out of bounds
             if laser.row < 0 or laser.row >= len(maze) or laser.col < 0 or laser.col >= len(maze[0]):
                 laser.alive = False
                 continue
 
-            new_tile = maze[laser.row][laser.col]
+            # Check if the laser's state has been seen before
+            laser_state = (laser.row, laser.col, laser.direction)
+            if laser_state in seen_lasers:
+                laser.alive = False
+                continue
+            else:
+                seen_lasers.add(laser_state)
+
+            # Energize the tile
             energised_tiles.add((laser.row, laser.col))
-            if len(energised_tiles) == last_len:
-                #print("Removing a life")
-                lives -= 1
-                #print(f"Lives remaining: {lives}")
-            if lives <= 0:
-                #print("All lives have been lost, the program will now exit")
-                pprint(maze, energised_tiles)
-                return len(energised_tiles) 
-            last_len = len(energised_tiles)
+
+            # Handle the reflection and direction changes
+            new_tile = maze[laser.row][laser.col]
             match new_tile:
                 case "|":
                     if laser.direction == Direction.LEFT or laser.direction == Direction.RIGHT:
@@ -104,8 +109,8 @@ def part1(maze):
                         case Direction.DOWN:
                             #print("Laser has been reflected, it will now go left")
                             laser.direction = Direction.LEFT
-                    
 
+    return len(energised_tiles)
 
 
 
